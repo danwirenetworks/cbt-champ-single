@@ -1,24 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useJambMode } from "@/hooks/useJambMode";
 
 export default function JambModeSelector({ subjects, onStartSingle, onStartSession }) {
-  const englishSubject = subjects.find(
-    (s) => s.name.toLowerCase().includes("english")
-  );
-  const otherSubjects = subjects.filter(
-    (s) => !s.name.toLowerCase().includes("english")
-  );
+  const {
+    englishSubject,
+    otherSubjects,
+    selectedSingle,
+    setSelectedSingle,
+    selectedSession,
+    toggleSessionSubject,
+    hasValidDuration,
+  } = useJambMode(subjects);
 
-  const [selectedSingle, setSelectedSingle] = useState(null);
-  const [selectedSession, setSelectedSession] = useState([]);
-
-  // ✅ Validate duration
-  const hasValidDuration = (subject) => {
-    const duration = parseInt(subject.duration, 10);
-    return !isNaN(duration) && duration > 0;
-  };
-
-  // ✅ Single subject start
   const handleStartSingle = () => {
     const subject = subjects.find((s) => s.id === selectedSingle);
     if (!subject) return alert("Please select a subject");
@@ -26,17 +19,6 @@ export default function JambModeSelector({ subjects, onStartSingle, onStartSessi
       return alert(`⚠️ Invalid duration for ${subject.name}`);
     }
     onStartSingle(selectedSingle);
-  };
-
-  // ✅ Session selection
-  const toggleSessionSubject = (id) => {
-    setSelectedSession((prev) =>
-      prev.includes(id)
-        ? prev.filter((sid) => sid !== id)
-        : prev.length < 3
-        ? [...prev, id]
-        : prev
-    );
   };
 
   const handleStartSession = () => {

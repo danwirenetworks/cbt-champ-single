@@ -24,10 +24,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
   set_exam_timing_mode: ({ id, mode }) =>
     safeInvoke("set_exam_timing_mode", { id, mode }),
 
+  // ✅ Added missing shuffle mode setter
+  set_exam_shuffle_mode: ({ id, mode }) =>
+    safeInvoke("set_exam_shuffle_mode", { id, mode }),
+
   /* -------------------- Subjects -------------------- */
   get_subjects: (exam_id) => safeInvoke("get_subjects", exam_id),
-  add_subject: ({ exam_id, name, duration }) =>
-    safeInvoke("add_subject", { exam_id, name, duration }),
+  add_subject: ({ exam_id, name, duration, questionCount, allowGroupShuffle }) =>
+    safeInvoke("add_subject", { exam_id, name, duration, questionCount, allowGroupShuffle }),
   edit_subject: ({ id, name, duration }) =>
     safeInvoke("edit_subject", { id, name, duration }),
   set_subject_duration: ({ id, duration }) =>

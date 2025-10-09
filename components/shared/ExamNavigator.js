@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect } from "react";
 
 export default function ExamNavigator({
@@ -6,6 +7,7 @@ export default function ExamNavigator({
   totalQuestions,
   answers,
   questionIds,
+  markedForReview = {},
   onNext,
   onPrev,
   onJump,
@@ -45,8 +47,8 @@ export default function ExamNavigator({
       }
     };
 
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
   }, [
     onNext,
     onPrev,
@@ -57,9 +59,9 @@ export default function ExamNavigator({
   ]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md p-2 flex flex-col">
-      {/* Navigation Buttons */}
-      <div className="flex justify-between mb-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md p-4 space-y-3 z-50">
+      {/* 🔄 Navigation Buttons */}
+      <div className="flex justify-between">
         <button
           onClick={onPrev}
           disabled={currentIndex === 0}
@@ -76,23 +78,23 @@ export default function ExamNavigator({
         </button>
       </div>
 
-      {/* Question Grid */}
+      {/* 🔢 Question Grid */}
       <div className="flex flex-wrap gap-2 justify-center">
         {questionIds.map((qid, i) => {
           const isAnswered = answers[qid];
+          const isMarked = markedForReview[qid];
           const isActive = i === currentIndex;
+
+          let bgColor = "bg-gray-200 hover:bg-gray-300 text-black";
+          if (isMarked) bgColor = "bg-yellow-400 text-white";
+          if (isAnswered) bgColor = "bg-green-500 text-white";
+          if (isActive) bgColor = "bg-blue-600 text-white";
 
           return (
             <button
               key={qid}
               onClick={() => onJump(i)}
-              className={`w-10 h-10 flex items-center justify-center rounded font-semibold border ${
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : isAnswered
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
+              className={`w-10 h-10 flex items-center justify-center rounded font-semibold border ${bgColor}`}
             >
               {i + 1}
             </button>

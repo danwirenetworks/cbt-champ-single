@@ -1,43 +1,31 @@
-import { useAdminLogic } from "../hooks/useAdminLogic";
-import TabButton from "../components/TabButton";
-import DashboardStats from "../components/DashboardStats";
-import ExamManager from "../components/ExamManager";
-import SubjectManager from "../components/SubjectManager";
-import QuestionManager from "../components/QuestionManager";
-import CandidateManager from "../components/CandidateManager";
-import ReportsPanel from "../components/ReportsPanel";
+import { useState } from "react";
+import AdminLayout from "../components/admin/AdminLayout";
+import TabBar from "../components/admin/TabBar";
+import DashboardPanel from "../components/admin/DashboardPanel";
+import ExamPanel from "../components/admin/ExamPanel";
+import CandidatePanel from "../components/admin/CandidatePanel";
+import ReportsPanel from "../components/admin/ReportsPanel";
 
 export default function AdminPage() {
-  const admin = useAdminLogic();
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  const tabs = [
+    { id: "dashboard", label: "Dashboard" },
+    { id: "exams", label: "Exams & Subjects" },
+    { id: "candidates", label: "Candidates" },
+    { id: "reports", label: "Reports" },
+  ];
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold mb-4">🛠 Admin Console</h1>
+    <AdminLayout title="🛠 Admin Console">
+      <TabBar activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} />
 
-      <div className="flex gap-2 border-b">
-        <TabButton id="dashboard" label="Dashboard" {...admin} />
-        <TabButton id="exams" label="Exams & Subjects" {...admin} />
-        <TabButton id="candidates" label="Candidates" {...admin} />
-        <TabButton id="reports" label="Reports" {...admin} />
+      <div className="mt-4">
+        {activeTab === "dashboard" && <DashboardPanel />}
+        {activeTab === "exams" && <ExamPanel />}
+        {activeTab === "candidates" && <CandidatePanel />}
+        {activeTab === "reports" && <ReportsPanel />}
       </div>
-
-      {admin.activeTab === "dashboard" && <DashboardStats {...admin} />}
-      {admin.activeTab === "exams" && (
-        <>
-          <ExamManager {...admin} />
-          <SubjectManager
-            selectedExam={admin.selectedExam}
-            selectedSubject={admin.selectedSubject}
-            setSelectedSubject={admin.setSelectedSubject}
-          />
-          <QuestionManager
-            selectedExam={admin.selectedExam}
-            selectedSubject={admin.selectedSubject}
-          />
-        </>
-      )}
-      {admin.activeTab === "candidates" && <CandidateManager {...admin} />}
-      {admin.activeTab === "reports" && <ReportsPanel />}
-    </div>
+    </AdminLayout>
   );
 }

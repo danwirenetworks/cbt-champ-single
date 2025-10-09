@@ -1,145 +1,119 @@
-"use client";
-import { useState, useEffect } from "react";
-
-export default function SubjectManager({ selectedExam, selectedSubject, setSelectedSubject }) {
-  const [subjects, setSubjects] = useState([]);
-  const [newSubject, setNewSubject] = useState({ name: "", duration: 30 });
-  const [editingId, setEditingId] = useState(null);
-  const [savingId, setSavingId] = useState(null);
-
-  const isSessionMode = selectedExam?.timingMode === "session";
-
-  useEffect(() => {
-    if (!selectedExam) return;
-    (async () => {
-      const data = await window.electronAPI.get_subjects(selectedExam.id);
-      setSubjects(data);
-    })();
-  }, [selectedExam]);
-
-  const handleAdd = async () => {
-  if (!selectedExam || !selectedExam.id) {
-    return alert("⚠️ Please select an exam first.");
+export default function SubjectManager({
+  selectedExam,
+  subjects,
+  subjectInput,
+  setSubjectInput,
+  subjectDuration,
+  setSubjectDuration,
+  questionCount,
+  setQuestionCount,
+  allowGroupShuffle,
+  setAllowGroupShuffle,
+  addSubject,
+  deleteSubject,
+  selectedSubject,
+  setSelectedSubject,
+  loadQuestions,   // ✅ added for question loading
+  setSubTab,       // ✅ added for tab switching
+}) {
+  if (!selectedExam) {
+    return (
+      <div className="bg-white p-6 rounded shadow text-red-600 font-medium">
+        ⚠️ Please select an exam first to manage subjects.
+      </div>
+    );
   }
-  if (!newSubject.name.trim()) return alert("Enter subject name");
 
-  const res = await window.electronAPI.add_subject({
-    exam_id: selectedExam.id,
-    name: newSubject.name.trim(),
-    duration: isSessionMode ? 0 : parseInt(newSubject.duration, 10) || 30,
-  });
-
-  if (!res.error) {
-    setNewSubject({ name: "", duration: 30 });
-    const updated = await window.electronAPI.get_subjects(selectedExam.id);
-    setSubjects(updated);
-  }
-};
-
-  const handleEdit = async (id, name, duration) => {
-    setSavingId(id);
-    const res = await window.electronAPI.edit_subject({
-      id,
-      name,
-      duration: isSessionMode ? 0 : parseInt(duration, 10) || 30,
-    });
-    if (!res.error) {
-      const updated = await window.electronAPI.get_subjects(selectedExam.id);
-      setSubjects(updated);
-      setEditingId(null);
-    }
-    setTimeout(() => setSavingId(null), 1000);
+  const handleSubjectClick = (subject) => {
+    setSelectedSubject(subject);
+    loadQuestions(subject);     // ✅ load questions for selected subject
+    setSubTab("questions");     // ✅ switch to Questions tab
   };
 
   return (
-    <div className="border rounded p-4 bg-white shadow mt-6">
-      <h2 className="font-bold text-lg mb-4">📚 Subjects for {selectedExam?.name}</h2>
+    <div className="bg-white p-6 rounded shadow space-y-6">
+      <h2 className="text-xl font-semibold text-gray-800">
+        📚 Subjects for: <span className="text-blue-600">{selectedExam.name}</span>
+      </h2>
 
-      {/* ➕ Add Subject */}
-      <div className="flex gap-2 mb-4">
+      {/* ➕ Add New Subject */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium">Subject Name</label>
         <input
-          type="text"
-          placeholder="Subject name"
-          value={newSubject.name}
-          onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value })}
-          className="border p-2 rounded w-1/2"
+          className="border p-2 rounded w-full"
+          value={subjectInput}
+          onChange={(e) => setSubjectInput(e.target.value)}
+          placeholder="Enter subject name"
         />
+
+        <label className="block text-sm font-medium mt-2">Duration (minutes)</label>
         <input
           type="number"
-          placeholder="Duration (min)"
-          value={newSubject.duration}
-          onChange={(e) => setNewSubject({ ...newSubject, duration: e.target.value })}
-          className="border p-2 rounded w-1/4"
-          disabled={isSessionMode}
+          className="border p-2 rounded w-full"
+          value={subjectDuration}
+          onChange={(e) => setSubjectDuration(e.target.value)}
+          placeholder="e.g. 45"
         />
+
+        <label className="block text-sm font-medium mt-2">Question Count</label>
+        <input
+          type="number"
+          className="border p-2 rounded w-full"
+          value={questionCount}
+          onChange={(e) => setQuestionCount(e.target.value)}
+          placeholder="e.g. 20"
+        />
+
+        <label className="inline-flex items-center mt-2">
+          <input
+            type="checkbox"
+            checked={allowGroupShuffle}
+            onChange={(e) => setAllowGroupShuffle(e.target.checked)}
+            className="mr-2"
+          />
+          Allow Group Shuffle
+        </label>
+
         <button
-          onClick={handleAdd}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          onClick={addSubject}
+          className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
         >
-          Add Subject
+          ➕ Add Subject
         </button>
       </div>
 
-      {/* 📝 Subject List */}
-      <table className="w-full text-left">
-        <thead>
-          <tr className="border-b">
-            <th className="py-2">Name</th>
-            <th className="py-2">Duration</th>
-            <th className="py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+      {/* 📋 Subject List */}
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Available Subjects</h3>
+        <ul className="space-y-2 max-h-72 overflow-auto">
           {subjects.map((subj) => (
-            <tr
+            <li
               key={subj.id}
-              className={`border-b cursor-pointer ${
-                selectedSubject?.id === subj.id ? "bg-blue-50" : ""
+              className={`border rounded p-3 flex justify-between items-center cursor-pointer ${
+                selectedSubject?.id === subj.id ? "bg-blue-100" : "bg-gray-50 hover:bg-gray-100"
               }`}
-              onClick={() => setSelectedSubject(subj)}
+              onClick={() => handleSubjectClick(subj)} // ✅ updated
             >
-              <td className="py-2">{subj.name}</td>
-              <td className="py-2">
-                {editingId === subj.id ? (
-                  <input
-                    type="number"
-                    value={subj.duration}
-                    onChange={(e) => {
-                      const updated = subjects.map((s) =>
-                        s.id === subj.id ? { ...s, duration: e.target.value } : s
-                      );
-                      setSubjects(updated);
-                    }}
-                    className="border p-1 rounded w-20"
-                    disabled={isSessionMode}
-                  />
-                ) : (
-                  <span>{subj.duration} min</span>
-                )}
-              </td>
-              <td className="py-2 space-x-2">
-                {editingId === subj.id ? (
-                  <button
-                    onClick={() => handleEdit(subj.id, subj.name, subj.duration)}
-                    className={`px-3 py-1 rounded text-white ${
-                      savingId === subj.id ? "bg-green-500 animate-pulse" : "bg-green-600"
-                    }`}
-                  >
-                    {savingId === subj.id ? "Saved ✅" : "Save"}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setEditingId(subj.id)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded"
-                  >
-                    Edit
-                  </button>
-                )}
-              </td>
-            </tr>
+              <div>
+                <p className="font-medium">{subj.name}</p>
+                <p className="text-sm text-gray-600">
+                  Duration: {subj.duration} min | Questions: {subj.questionCount} | Group Shuffle:{" "}
+                  {subj.allowGroupShuffle ? "✓" : "✗"}
+                </p>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteSubject(subj.id);
+                }}
+                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+              >
+                Delete
+              </button>
+            </li>
           ))}
-        </tbody>
-      </table>
+        </ul>
+      </div>
     </div>
   );
 }
